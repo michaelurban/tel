@@ -144,12 +144,13 @@ export class MyTelInput
   }
   private _required = false;
 
-  // The control shouldn't be using disabled as an input name
-  @Input("ngDisabled") get disabled(): boolean {
+  get disabled(): boolean {
     return this._disabled;
   }
   @Output() ngDisabledChange = new EventEmitter<boolean>();
 
+  // The control shouldn't be using disabled as an input name
+  @Input("ngDisabled")
   set disabled(value: BooleanInput) {
     console.log("Pre Setting Disabled", {
       curIsDisabled: this._disabled,
