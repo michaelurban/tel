@@ -18,7 +18,9 @@
     <example-tel-input
       formControlName="tel"
       required
-      [(ngDisabled)]="isDisabled" />
+      [ngDisabled]="isDisabled"
+      (ngDisabledChange)="onNgDisableChange($event)" />
+    <!-- [(ngDisabled)]="isDisabled"  -->
     <mat-icon matSuffix>phone</mat-icon>
     <mat-hint>Include area code</mat-hint>
   </mat-form-field>

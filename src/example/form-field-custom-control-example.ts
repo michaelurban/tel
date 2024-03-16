@@ -13,6 +13,8 @@ import {
   ViewChild,
   forwardRef,
   EventEmitter,
+  OnChanges,
+  SimpleChanges,
 } from "@angular/core";
 import {
   AbstractControl,
@@ -55,6 +57,22 @@ export class FormFieldCustomControlExample implements OnInit {
     tel: new FormControl(null),
   });
 
+  private readonly telFormControl = this.form.controls.tel;
+
+  public onNgDisableChange(isDisabled: boolean) {
+    setTimeout(() => {
+      console.log(
+        "onNgDisableChange: Attempting to set control disabled state",
+        {
+          isDisabled,
+          parentIsDisabled: this.isDisabled,
+          controlIsDisabled: this.telFormControl.disabled,
+        }
+      );
+      this.isDisabled = isDisabled;
+    });
+  }
+
   @ViewChild(forwardRef(() => MyTelInput), { static: true })
   private readonly telInput!: MyTelInput;
   ngOnInit() {
@@ -81,7 +99,9 @@ export class MyTel {
   selector: "example-tel-input",
   templateUrl: "example-tel-input-example.html",
   styleUrl: "example-tel-input-example.css",
-  providers: [{ provide: MatFormFieldControl, useExisting: MyTelInput }],
+  providers: [
+    { provide: MatFormFieldControl, useExisting: forwardRef(() => MyTelInput) },
+  ],
   host: {
     "[class.example-floating]": "shouldLabelFloat",
     "[id]": "id",
@@ -90,7 +110,11 @@ export class MyTel {
   imports: [FormsModule, ReactiveFormsModule],
 })
 export class MyTelInput
-  implements ControlValueAccessor, MatFormFieldControl<MyTel>, OnDestroy
+  implements
+    ControlValueAccessor,
+    MatFormFieldControl<MyTel>,
+    OnDestroy,
+    OnChanges
 {
   static nextId = 0;
   @ViewChild("area") areaInput: HTMLInputElement;
@@ -143,32 +167,57 @@ export class MyTelInput
     this.stateChanges.next();
   }
   private _required = false;
+  private _disabled = false;
+
+  get disabled(): boolean {
+    return this._disabled;
+  }
 
   // The control shouldn't be using disabled as an input name
-  @Input("ngDisabled") get disabled(): boolean {
-    return this._disabled;
+  @Input("ngDisabled")
+  set disabled(value: BooleanInput) {
+    this.setDisabled(value);
   }
   @Output() ngDisabledChange = new EventEmitter<boolean>();
 
-  set disabled(value: BooleanInput) {
+  public setDisabled(
+    isDisabled: BooleanInput,
+    bySetDisabledState: boolean = false
+  ) {
     console.log("Pre Setting Disabled", {
       curIsDisabled: this._disabled,
-      newIsDisabled: value,
+      newIsDisabled: isDisabled,
       controlIsDisabled: this.ngControl.disabled,
       partsIsDisabled: this.parts.disabled,
+      bySetDisabledState,
     });
-    this._disabled = coerceBooleanProperty(value);
+    this._disabled = coerceBooleanProperty(isDisabled);
     this._disabled ? this.parts.disable() : this.parts.enable();
     this.stateChanges.next();
     this.ngDisabledChange.emit(this._disabled);
+
+    if (
+      !bySetDisabledState &&
+      this.ngControl.control &&
+      isDisabled !== this.ngControl.disabled
+    ) {
+      console.log("Calling:", isDisabled ? "enable" : "disable");
+
+      this.ngControl.control[isDisabled ? "enable" : "disable"]({
+        emitEvent: false,
+      });
+    }
     console.log("Post Setting Disabled", {
       curIsDisabled: this._disabled,
-      newIsDisabled: value,
+      newIsDisabled: isDisabled,
       controlIsDisabled: this.ngControl.disabled,
       partsIsDisabled: this.parts.disabled,
     });
   }
-  private _disabled = false;
+
+  public ngOnChanges(changes: SimpleChanges) {
+    console.log("ngOnChanges", changes);
+  }
 
   @Input()
   get value(): MyTel | null {
@@ -288,7 +337,7 @@ export class MyTelInput
 
   setDisabledState(isDisabled: boolean): void {
     console.log("setDisabledState called with: ", isDisabled);
-    this.disabled = isDisabled;
+    this.setDisabled(isDisabled, true);
   }
 
   _handleInput(control: AbstractControl, nextElement?: HTMLInputElement): void {
