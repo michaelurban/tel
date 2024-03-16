@@ -1,0 +1,29 @@
+@if(form.controls.tel; as telControl) {
+<button
+  (click)="telControl.disabled ? telControl.enable() : telControl.disable()">
+  Toggle Form Control Disabled
+</button>
+<button (click)="isDisabled=!isDisabled">Toggle Via Input</button>
+}
+
+<pre>
+  Form Status: {{ form.statusChanges | async }}
+  Form Control is Disabled: {{ form.controls.tel.disabled }}
+  Local isDisabled: {{ isDisabled }}
+</pre>
+
+<div [formGroup]="form">
+  <mat-form-field>
+    <mat-label>Phone number</mat-label>
+    <example-tel-input
+      formControlName="tel"
+      required
+      [(ngDisabled)]="isDisabled" />
+    <mat-icon matSuffix>phone</mat-icon>
+    <mat-hint>Include area code</mat-hint>
+  </mat-form-field>
+</div>
+
+<!-- Copyright 2024 Google LLC. All Rights Reserved.
+    Use of this source code is governed by an MIT-style license that
+    can be found in the LICENSE file at https://angular.io/license -->
